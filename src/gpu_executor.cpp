@@ -129,7 +129,8 @@ void GPUExecutor::Execute() {
 			ThreadContext thread_context(context);
 			ExecutionContext exec_context(context, thread_context, &duckdb_pipeline);
 			auto &table_scan = pipeline->source->Cast<GPUPhysicalTableScan>();
-			table_scan.GetDataDuckDB(exec_context);
+			// table_scan.GetDataDuckDB(exec_context);
+			table_scan.GetDataDuckDBWithParquet(exec_context, gpu_context);
 		}
 		pipeline->source->GetData(*source_relation);
 		// SIRIUS_LOG_DEBUG("source relation size {}", source_relation->columns.size());

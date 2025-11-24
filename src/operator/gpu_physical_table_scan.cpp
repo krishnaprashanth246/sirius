@@ -26,6 +26,7 @@
 #include "duckdb/common/types/column/column_data_collection.hpp"
 #include "gpu_columns.hpp"
 #include "gpu_materialize.hpp"
+#include "gpu_context.hpp"
 #include "utils.hpp"
 #include "log/logging.hpp"
 
@@ -1147,6 +1148,14 @@ void GPUPhysicalTableScan::ScanDataDuckDBOpt(
   } else {
     throw NotImplementedException("Table in-out function not supported");
   }
+}
+
+SourceResultType
+GPUPhysicalTableScan::GetDataDuckDBWithParquet(ExecutionContext &exec_context, GPUContext &gpu_context) {
+  // check if query is parquet only
+  SIRIUS_LOG_DEBUG("GPUPhysicalTableScan GetDataDuckDBWithParquet invoked");
+  SIRIUS_LOG_DEBUG("GPU Active Query: ", gpu_context.gpu_active_query->query);
+  return GetDataDuckDB(exec_context);
 }
 
 SourceResultType
