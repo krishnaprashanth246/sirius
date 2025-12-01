@@ -59,9 +59,6 @@
 
 namespace duckdb {
 
-class GPUColumn;
-class GPUBufferManager;
-
 inline bool IsCudfTypeDecimal(const cudf::data_type& type) {
   return type.id() == cudf::type_id::DECIMAL32 ||
          type.id() == cudf::type_id::DECIMAL64 ||
@@ -81,9 +78,4 @@ inline int GetCudfDecimalTypeSize(const cudf::data_type& type) {
   throw InternalException("Non decimal cudf type called in `GetCudfDecimalTypeSize`: %d",
                           static_cast<int>(type.id()));
 }
-std::vector<duckdb::shared_ptr<GPUColumn>> read_parquet_to_gpu_columns(
-    const std::string& file_path,
-    const std::vector<std::string>& column_names,
-    GPUBufferManager* gpuBufferManager
-);
 }
