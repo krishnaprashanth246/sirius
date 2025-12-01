@@ -1,0 +1,31 @@
+services:
+  db:
+    build: 
+      context: ./docker/x86_64/stable/
+      dockerfile: Dockerfile
+      network: host
+      #image: ubuntu:24.04
+    volumes: 
+      - .:/sirius
+    networks:
+      - sirius
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    stdin_open: true
+    tty: true
+    command: tail -f /dev/null
+
+networks:
+  sirius:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+    ipam:
+      config:
+        - subnet: 192.168.3.0/24
+          gateway: 192.168.3.1

@@ -22,7 +22,7 @@
 #include "duckdb/storage/data_table.hpp"
 #include "duckdb/common/extra_operator_info.hpp"
 #include "duckdb/execution/operator/scan/physical_table_scan.hpp"
-
+#include "gpu_context.hpp"
 namespace duckdb {
 
 enum ScanDataType {
@@ -127,7 +127,7 @@ public:
 	void ScanDataDuckDBOpt(ExecutionContext &exec_context,
 												 GPUBufferManager* gpuBufferManager,
 												 string up_table_name);
-
+	SourceResultType GetDataDuckDBWithParquet(ExecutionContext &exec_context, GPUContext &gpu_context);
 	SourceResultType GetDataDuckDB(ExecutionContext &exec_context);
 	void ScanDataDuckDB(GPUBufferManager* gpuBufferManager, string up_table_name) const;
 
