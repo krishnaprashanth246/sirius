@@ -20,5 +20,6 @@ set(CUDA_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/cudf_utils.cu
         ${CMAKE_CURRENT_SOURCE_DIR}/cudf_aggregate.cu
         ${CMAKE_CURRENT_SOURCE_DIR}/cudf_duplicate_elimination.cu
+        ${CMAKE_CURRENT_SOURCE_DIR}/cudf_parquet.cu
         PARENT_SCOPE
 )
