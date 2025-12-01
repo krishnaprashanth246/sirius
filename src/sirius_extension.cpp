@@ -176,6 +176,7 @@ SiriusExtension::GPUProcessingBind(ClientContext &context, TableFunctionBindInpu
 	auto result = make_uniq<GPUTableFunctionData>();
 	result->conn = make_uniq<Connection>(*context.db);
 	result->query = input.inputs[0].ToString();
+	SIRIUS_LOG_DEBUG("GPUProcessingBind query: {}\n", result->query);
 	result->enable_optimizer = true;
 	result->gpu_context = make_uniq<GPUContext>(context);
 	if (input.inputs[0].IsNull()) {
@@ -184,8 +185,14 @@ SiriusExtension::GPUProcessingBind(ClientContext &context, TableFunctionBindInpu
 
 	//Parse the query just to get the result type information and to create preparedstatmement data
 	auto statements = result->conn->context->ParseStatements(result->query);
+	SIRIUS_LOG_DEBUG("Parsed statements count: {}", statements.size());
+	for(int i = 0; i < (int)statements.size(); i++) {
+		auto &stmt = statements[i];
+		SIRIUS_LOG_DEBUG("Parsed Statement {}: {}", i, stmt->query);
+	}
 	Planner planner(context);
 	auto statement_type = statements[0]->type;
+	SIRIUS_LOG_DEBUG("Statement 0 type: {}", StatementTypeToString(statement_type));
 	planner.CreatePlan(std::move(statements[0]));
 	D_ASSERT(planner.plan);
 
