@@ -1,8 +1,8 @@
 #include "cudf/cudf_utils.hpp"
+#include "../operator/cuda_helper.cuh"
+#include "gpu_physical_table_scan.hpp"
 #include "gpu_columns.hpp"
 #include "gpu_buffer_manager.hpp"
-#include "gpu_physical_table_scan.hpp"
-#include <cudf/io/parquet.hpp>
 
 namespace duckdb {
 
