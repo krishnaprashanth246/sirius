@@ -78,4 +78,9 @@ inline int GetCudfDecimalTypeSize(const cudf::data_type& type) {
   throw InternalException("Non decimal cudf type called in `GetCudfDecimalTypeSize`: %d",
                           static_cast<int>(type.id()));
 }
+std::vector<std::shared_ptr<GPUColumn>> read_parquet_to_gpu_columns(
+    const std::string& file_path,
+    const std::vector<std::string>& column_names,
+    GPUBufferManager* gpuBufferManager
+);
 }

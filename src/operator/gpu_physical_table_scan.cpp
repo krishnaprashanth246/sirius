@@ -29,6 +29,7 @@
 #include "gpu_context.hpp"
 #include "utils.hpp"
 #include "log/logging.hpp"
+#include "cudf/cudf_utils.hpp"
 
 namespace duckdb {
 
