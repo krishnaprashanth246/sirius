@@ -5,7 +5,7 @@
 
 namespace duckdb {
 
-std::vector<std::shared_ptr<GPUColumn>> read_parquet_to_gpu_columns(
+std::vector<duckdb::shared_ptr<GPUColumn>> read_parquet_to_gpu_columns(
     const std::string& file_path,
     const std::vector<std::string>& column_names,
     GPUBufferManager* gpuBufferManager
