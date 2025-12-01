@@ -23,6 +23,9 @@
 #include "duckdb/common/extra_operator_info.hpp"
 #include "duckdb/execution/operator/scan/physical_table_scan.hpp"
 #include "gpu_context.hpp"
+#include "cudf_utils.hpp"
+#include "gpu_columns.hpp"
+#include "gpu_buffer_manager.hpp"
 namespace duckdb {
 
 enum ScanDataType {
@@ -57,6 +60,11 @@ void comparisonStringBetweenExpression(char* char_data, uint64_t num_chars, uint
 void comparisonStringExpression(char* char_data, uint64_t num_chars, uint64_t* str_indices, uint64_t num_strings, std::string comparison_string, int op_mode, uint64_t* &row_id, uint64_t* &count);
 void tableScanExpression(uint8_t **col, uint64_t** offset, cudf::bitmask_type** bitmask, uint8_t *constant_compare, uint64_t *constant_offset, 
 	ScanDataType* data_type, uint64_t *&row_ids, uint64_t* &count, uint64_t N, CompareType* compare_mode, int num_expr);
+std::vector<std::shared_ptr<GPUColumn>> read_parquet_to_gpu_columns(
+    const std::string& file_path,
+    const std::vector<std::string>& column_names,
+    GPUBufferManager* gpuBufferManager
+);
 
 class GPUPhysicalTableScan : public GPUPhysicalOperator {
 public:

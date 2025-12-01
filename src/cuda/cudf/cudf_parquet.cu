@@ -1,6 +1,7 @@
 #include "cudf/cudf_utils.hpp"
 #include "gpu_columns.hpp"
 #include "gpu_buffer_manager.hpp"
+#include "gpu_physical_table_scan.hpp"
 #include <cudf/io/parquet.hpp>
 
 namespace duckdb {
@@ -22,7 +23,6 @@ std::vector<std::shared_ptr<GPUColumn>> read_parquet_to_gpu_columns(
     
     std::vector<std::shared_ptr<GPUColumn>> result;
     auto table_view = table->view();
-    
     for (size_t i = 0; i < table->num_columns(); i++) {
         auto cudf_col = table_view.column(i);
         auto gpu_col = make_shared_ptr<GPUColumn>();
@@ -32,7 +32,6 @@ std::vector<std::shared_ptr<GPUColumn>> read_parquet_to_gpu_columns(
         
         result.push_back(gpu_col);
     }
-    
     return result;
 }
 
