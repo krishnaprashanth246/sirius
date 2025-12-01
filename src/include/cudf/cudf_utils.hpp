@@ -59,6 +59,9 @@
 
 namespace duckdb {
 
+class GPUColumn;
+class GPUBufferManager;
+
 inline bool IsCudfTypeDecimal(const cudf::data_type& type) {
   return type.id() == cudf::type_id::DECIMAL32 ||
          type.id() == cudf::type_id::DECIMAL64 ||
