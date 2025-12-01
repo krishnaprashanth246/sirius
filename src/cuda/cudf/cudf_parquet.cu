@@ -20,7 +20,7 @@ std::vector<std::shared_ptr<GPUColumn>> read_parquet_to_gpu_columns(
     auto table_with_metadata = cudf::io::read_parquet(builder.build());
     auto table = std::move(table_with_metadata.tbl);
     
-    std::vector<std::shared_ptr<GPUColumn>> result;
+    std::vector<duckdb::shared_ptr<GPUColumn>> result;
     auto table_view = table->view();
     for (size_t i = 0; i < table->num_columns(); i++) {
         auto cudf_col = table_view.column(i);
