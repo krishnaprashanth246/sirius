@@ -3,6 +3,7 @@
 #include "gpu_columns.hpp"
 #include "gpu_buffer_manager.hpp"
 #include "gpu_physical_table_scan.hpp"
+#include "log/logging.hpp"
 
 namespace duckdb {
 
@@ -25,7 +26,7 @@ std::vector<shared_ptr<GPUColumn>> read_parquet_to_gpu_columns(
     auto table_view = table->view();
     for (size_t i = 0; i < table->num_columns(); i++) {
         auto cudf_col = table_view.column(i);
-        auto gpu_col = make_shared_ptr<GPUColumn>();
+        auto gpu_col = make_shared_ptr<GPUColumn>(0, GPUColumnType(), nullptr, nullptr);
         
         auto cudf_col_owned = std::make_unique<cudf::column>(cudf_col);
         gpu_col->setFromCudfColumn(*cudf_col_owned, false, nullptr, 0, gpuBufferManager);
@@ -33,6 +34,41 @@ std::vector<shared_ptr<GPUColumn>> read_parquet_to_gpu_columns(
         result.push_back(gpu_col);
     }
     return result;
+}
+
+void cache_parquet_columns(std::vector<shared_ptr<GPUColumn>>& columns, GPUBufferManager* gpuBufferManager) 
+{
+    for (auto& column : columns) {
+        auto& data_wrapper = column->data_wrapper;
+        size_t num_rows = column->column_length;
+        SIRIUS_LOG_DEBUG("Caching parquet column of type {} with {} rows and {} bytes",
+            static_cast<int>(data_wrapper.type), num_rows, data_wrapper.num_bytes);
+        uint8_t* cached_data = gpuBufferManager->customCudaMalloc<uint8_t>(
+            data_wrapper.num_bytes, 0, 1
+        );
+        cudaMemcpy(cached_data, data_wrapper.data, data_wrapper.num_bytes, cudaMemcpyDeviceToDevice);
+
+        cudf::bitmask_type* cached_mask = nullptr;
+        if (data_wrapper.validity_mask != nullptr) {
+            cached_mask = gpuBufferManager->customCudaMalloc<cudf::bitmask_type>(
+                data_wrapper.mask_bytes / sizeof(cudf::bitmask_type), 0, 1
+            );
+            cudaMemcpy(cached_mask, data_wrapper.validity_mask,
+                      data_wrapper.mask_bytes, cudaMemcpyDeviceToDevice);
+        }
+
+        uint64_t* cached_offset = nullptr;
+        if (data_wrapper.is_string_data && data_wrapper.offset != nullptr) {
+            cached_offset = gpuBufferManager->customCudaMalloc<uint64_t>(num_rows + 1, 0, 1);
+            cudaMemcpy(cached_offset, data_wrapper.offset,
+                      sizeof(uint64_t) * (num_rows + 1), cudaMemcpyDeviceToDevice);
+        }
+
+        data_wrapper.data = cached_data;
+        data_wrapper.validity_mask = cached_mask;
+        data_wrapper.offset = cached_offset;
+    }
+    cudaDeviceSynchronize();
 }
 
 }

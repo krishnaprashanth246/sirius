@@ -1273,7 +1273,8 @@ GPUPhysicalTableScan::GetDataDuckDBParquet(ExecutionContext &exec_context, GPUCo
   auto gpu_cols = read_parquet_to_gpu_columns(parquet_file_path, projected_names, gpuBufferManager);
   int num_columns = gpu_cols.size();
   SIRIUS_LOG_DEBUG("Parquet file {} read into {} GPU columns", parquet_file_path, num_columns);
-
+  cache_parquet_columns(gpu_cols, gpuBufferManager);
+  SIRIUS_LOG_DEBUG("Parquet columns cached into GPUBufferManager");
   // gpuBufferManager->createTable(table_name, num_columns);
   // for (int col = 0; col < num_columns; col++) {
   //     if (!already_cached[col]) {

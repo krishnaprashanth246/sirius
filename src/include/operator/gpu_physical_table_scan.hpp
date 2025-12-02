@@ -65,6 +65,7 @@ std::vector<shared_ptr<GPUColumn>> read_parquet_to_gpu_columns(
     const std::vector<std::string>& column_names,
     GPUBufferManager* gpuBufferManager
 );
+void cache_parquet_columns(std::vector<shared_ptr<GPUColumn>>& columns, GPUBufferManager* gpuBufferManager);
 
 class GPUPhysicalTableScan : public GPUPhysicalOperator {
 public:
