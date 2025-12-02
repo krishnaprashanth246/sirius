@@ -193,7 +193,7 @@ public:
     GPUColumn(size_t _column_length, GPUColumnType type, uint8_t* data, uint64_t* offset, size_t num_bytes, bool is_string_data, 
             cudf::bitmask_type* validity_mask);
     GPUColumn(shared_ptr<GPUColumn> other);
-
+    GPUColumn() = default;
     ~GPUColumn(){};
     int* GetDataInt32();
     uint64_t* GetDataUInt64();
