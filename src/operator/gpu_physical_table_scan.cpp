@@ -1276,7 +1276,7 @@ GPUPhysicalTableScan::GetDataDuckDBParquet(ExecutionContext &exec_context, GPUCo
   cache_parquet_columns(gpu_cols, gpuBufferManager);
   SIRIUS_LOG_DEBUG("Parquet columns cached into GPUBufferManager");
   for (int col = 0; col < num_columns; col++) {
-      // scanned_types[col] = convertColumnTypeToLogicalType(gpu_cols[col]->data_wrapper.type);
+      scanned_types[col] = convertColumnTypeToLogicalType(gpu_cols[col]->data_wrapper.type);
       if (!already_cached[col]) {
         gpuBufferManager->createTableAndColumnInGPU(table_name, projected_names[col], scanned_types[col], col, num_columns);
       }
@@ -1295,7 +1295,6 @@ GPUPhysicalTableScan::GetDataDuckDBParquet(ExecutionContext &exec_context, GPUCo
         int column_idx = column_it - gpuBufferManager->tables[up_table_name]->column_names.begin();
         gpuBufferManager->tables[up_table_name]->columns[column_idx]->column_length = gpu_cols[col]->column_length;
         gpuBufferManager->tables[up_table_name]->columns[column_idx]->data_wrapper = gpu_cols[col]->data_wrapper;
-        gpuBufferManager->tables[up_table_name]->columns[column_idx]->data_wrapper.type = convertLogicalTypeToColumnType(scanned_types[col]);
         // GPUColumnType column_type = convertLogicalTypeToColumnType(scanned_types[col]);
         // gpuBufferManager->tables[up_table_name]->columns[column_idx]->column_length = collection->Count();
         // cudf::bitmask_type* validity_mask = reinterpret_cast<cudf::bitmask_type*>(d_mask_ptr[col]);
