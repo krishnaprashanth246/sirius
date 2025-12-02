@@ -1305,7 +1305,7 @@ GPUPhysicalTableScan::GetDataDuckDBParquet(ExecutionContext &exec_context, GPUCo
     }
   }
   SIRIUS_LOG_DEBUG("GetDataDuckDBParquet finished");
-  return SourceResultType::HAVE_MORE_OUTPUT;
+  return SourceResultType::FINISHED;
 }
 
 SourceResultType
