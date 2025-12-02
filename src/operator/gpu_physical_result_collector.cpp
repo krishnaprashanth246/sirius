@@ -359,6 +359,7 @@ SinkResultType GPUPhysicalMaterializedCollector::ConvertGPUTableToCPUCollection(
 				Vector vector(types[col], data);
 				ValidityMask validity_mask(reinterpret_cast<validity_t*>(host_mask_data[col]), chunk_cardinality);
 				FlatVector::SetValidity(vector, validity_mask);
+				SIRIUS_LOG_DEBUG("Chunk column type: {}, ref column type: {}", chunk.data[col].GetType().ToString(), vector.GetType().ToString());
 				chunk.data[col].Reference(vector);
 			} else {
 				// Add the strings to the vector
