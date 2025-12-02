@@ -1293,7 +1293,8 @@ GPUPhysicalTableScan::GetDataDuckDBParquet(ExecutionContext &exec_context, GPUCo
             throw InvalidInputException("Column not found");
         }
         int column_idx = column_it - gpuBufferManager->tables[up_table_name]->column_names.begin();
-        gpuBufferManager->tables[up_table_name]->columns[column_idx] = gpu_cols[col];
+        gpuBufferManager->tables[up_table_name]->columns[column_idx]->column_length = gpu_cols[col]->column_length;
+        gpuBufferManager->tables[up_table_name]->columns[column_idx]->data_wrapper = gpu_cols[col]->data_wrapper;
         // GPUColumnType column_type = convertLogicalTypeToColumnType(scanned_types[col]);
         // gpuBufferManager->tables[up_table_name]->columns[column_idx]->column_length = collection->Count();
         // cudf::bitmask_type* validity_mask = reinterpret_cast<cudf::bitmask_type*>(d_mask_ptr[col]);
