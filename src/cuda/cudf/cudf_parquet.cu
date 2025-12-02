@@ -41,8 +41,7 @@ void cache_parquet_columns(std::vector<shared_ptr<GPUColumn>>& columns, GPUBuffe
     for (auto& column : columns) {
         auto& data_wrapper = column->data_wrapper;
         size_t num_rows = column->column_length;
-        SIRIUS_LOG_DEBUG("Caching parquet column of type {} with {} rows and {} bytes",
-            static_cast<int>(data_wrapper.type), num_rows, data_wrapper.num_bytes);
+        SIRIUS_LOG_DEBUG("Caching parquet column with {} rows", num_rows);
         uint8_t* cached_data = gpuBufferManager->customCudaMalloc<uint8_t>(
             data_wrapper.num_bytes, 0, 1
         );
