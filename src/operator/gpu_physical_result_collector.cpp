@@ -366,6 +366,7 @@ SinkResultType GPUPhysicalMaterializedCollector::ConvertGPUTableToCPUCollection(
 				Vector str_vector(LogicalType::VARCHAR, reinterpret_cast<data_ptr_t>(duckdb_strings[col] + read_index));
 				ValidityMask validity_mask(reinterpret_cast<validity_t*>(host_mask_data[col]), chunk_cardinality);
 				FlatVector::SetValidity(str_vector, validity_mask);
+				SIRIUS_LOG_DEBUG("Chunk column type: {}, ref column type: {}", chunk.data[col].GetType().ToString(), str_vector.GetType().ToString());
 				chunk.data[col].Reference(str_vector);
 			}
 		}
