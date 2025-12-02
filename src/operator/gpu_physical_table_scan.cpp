@@ -1275,34 +1275,35 @@ GPUPhysicalTableScan::GetDataDuckDBParquet(ExecutionContext &exec_context, GPUCo
   SIRIUS_LOG_DEBUG("Parquet file {} read into {} GPU columns", parquet_file_path, num_columns);
   cache_parquet_columns(gpu_cols, gpuBufferManager);
   SIRIUS_LOG_DEBUG("Parquet columns cached into GPUBufferManager");
-  // gpuBufferManager->createTable(table_name, num_columns);
-  // for (int col = 0; col < num_columns; col++) {
-  //     if (!already_cached[col]) {
-  //       gpuBufferManager->createColumn(table_name, projected_names[col], convertCudfTypeToLogicalType(gpu_cols[col].type));
-  //     }
-  // }
-  // for (int col = 0; col < num_columns; col++) {
-  //   if (!already_cached[col]) {
-  //       auto up_column_name = names[column_ids[col].GetPrimaryIndex()];
-  //       auto up_table_name = table_name;
-  //       transform(up_table_name.begin(), up_table_name.end(), up_table_name.begin(), ::toupper);
-  //       transform(up_column_name.begin(), up_column_name.end(), up_column_name.begin(), ::toupper);
-  //       auto column_it = find(gpuBufferManager->tables[up_table_name]->column_names.begin(), gpuBufferManager->tables[up_table_name]->column_names.end(), up_column_name);
-  //       if (column_it == gpuBufferManager->tables[up_table_name]->column_names.end()) {
-  //           throw InvalidInputException("Column not found");
-  //       }
-  //       int column_idx = column_it - gpuBufferManager->tables[up_table_name]->column_names.begin();
-  //       GPUColumnType column_type = convertLogicalTypeToColumnType(scanned_types[col]);
-  //       gpuBufferManager->tables[up_table_name]->columns[column_idx]->column_length = collection->Count();
-  //       cudf::bitmask_type* validity_mask = reinterpret_cast<cudf::bitmask_type*>(d_mask_ptr[col]);
-  //       if (scanned_types[col] == LogicalType::VARCHAR) {
-  //         gpuBufferManager->tables[up_table_name]->columns[column_idx]->data_wrapper = DataWrapper(column_type, d_ptr[col], d_offset_ptr[col], collection->Count(), column_size[col], true, validity_mask);
-  //       } else {
-  //         gpuBufferManager->tables[up_table_name]->columns[column_idx]->data_wrapper = DataWrapper(column_type, d_ptr[col], collection->Count(), validity_mask);
-  //       }
-  //       SIRIUS_LOG_DEBUG("Column {} cached in GPU at index {}", up_column_name, column_idx);
-  //   }
-  // }
+  for (int col = 0; col < num_columns; col++) {
+      if (!already_cached[col]) {
+        gpuBufferManager->createTableAndColumnInGPU(table_name, projected_names[col], scanned_types[col], col, num_columns);
+      }
+  }
+  SIRIUS_LOG_DEBUG("Created necessary table and columns in GPUBufferManager for parquet data");
+  for (int col = 0; col < num_columns; col++) {
+    if (!already_cached[col]) {
+        auto up_column_name = names[column_ids[col].GetPrimaryIndex()];
+        auto up_table_name = table_name;
+        transform(up_table_name.begin(), up_table_name.end(), up_table_name.begin(), ::toupper);
+        transform(up_column_name.begin(), up_column_name.end(), up_column_name.begin(), ::toupper);
+        auto column_it = find(gpuBufferManager->tables[up_table_name]->column_names.begin(), gpuBufferManager->tables[up_table_name]->column_names.end(), up_column_name);
+        if (column_it == gpuBufferManager->tables[up_table_name]->column_names.end()) {
+            throw InvalidInputException("Column not found");
+        }
+        int column_idx = column_it - gpuBufferManager->tables[up_table_name]->column_names.begin();
+        gpuBufferManager->tables[up_table_name]->columns[column_idx] = gpu_cols[col];
+        // GPUColumnType column_type = convertLogicalTypeToColumnType(scanned_types[col]);
+        // gpuBufferManager->tables[up_table_name]->columns[column_idx]->column_length = collection->Count();
+        // cudf::bitmask_type* validity_mask = reinterpret_cast<cudf::bitmask_type*>(d_mask_ptr[col]);
+        // if (scanned_types[col] == LogicalType::VARCHAR) {
+        //   gpuBufferManager->tables[up_table_name]->columns[column_idx]->data_wrapper = DataWrapper(column_type, d_ptr[col], d_offset_ptr[col], collection->Count(), column_size[col], true, validity_mask);
+        // } else {
+        //   gpuBufferManager->tables[up_table_name]->columns[column_idx]->data_wrapper = DataWrapper(column_type, d_ptr[col], collection->Count(), validity_mask);
+        // }
+        SIRIUS_LOG_DEBUG("Column {} cached in GPU at index {}", up_column_name, column_idx);
+    }
+  }
   SIRIUS_LOG_DEBUG("GetDataDuckDBParquet finished");
   return SourceResultType::HAVE_MORE_OUTPUT;
 }
