@@ -1232,24 +1232,13 @@ GPUPhysicalTableScan::GetDataDuckDBWithParquet(ExecutionContext &exec_context, G
   // check if query is parquet only
   SIRIUS_LOG_DEBUG("GPUPhysicalTableScan GetDataDuckDBWithParquet invoked");
   SIRIUS_LOG_DEBUG("GPU Active Query: \n{}", gpu_context.gpu_active_query->query);
-  if(IsTableFunction() && function.name == "read_parquet") {
-    SIRIUS_LOG_DEBUG("Detected table function read_parquet, invoking parquet reader");
-    SourceResultType result = GetDataDuckDBParquet(exec_context, gpu_context);
-    if(result == SourceResultType::FINISHED) {
-      return result;
-    }
+  if(!IsTableFunction() || !function.name == "read_parquet") {
+    return GetDataDuckDB(exec_context);
   }
-  return GetDataDuckDB(exec_context);
-}
-
-
-SourceResultType
-GPUPhysicalTableScan::GetDataDuckDBParquet(ExecutionContext &exec_context, GPUContext &gpu_context) {
-  SIRIUS_LOG_DEBUG("GPUPhysicalTableScan GetDataDuckDB invoked");
+  SIRIUS_LOG_DEBUG("Detected table function read_parquet, invoking parquet reader");
   D_ASSERT(!column_ids.empty());
   auto gpuBufferManager = &(GPUBufferManager::GetInstance());
   string table_name = GetTableName();
-  shared_ptr<GPUIntermediateRelation> table;
   bool all_cached = true;
   for (int col = 0; col < column_ids.size() - gen_row_id_column; col++) {
       already_cached[col] = gpuBufferManager->checkIfColumnCached(table_name, names[column_ids[col].GetPrimaryIndex()]);
@@ -1259,9 +1248,10 @@ GPUPhysicalTableScan::GetDataDuckDBParquet(ExecutionContext &exec_context, GPUCo
   }
 
   if (all_cached) {
-    SIRIUS_LOG_DEBUG("Early terminating from GetDataDuckdbParquet because all cols are cached");
+    SIRIUS_LOG_DEBUG("Early terminating from GetDataDuckDBWithParquet because all cols are cached");
     return SourceResultType::FINISHED;
   }
+  D_ASSERT(!parameters.empty());
   string parquet_file_path = parameters[0].ToString();
   vector<string> projected_names;
   for (const auto& col_id : column_ids) {
@@ -1317,7 +1307,7 @@ GPUPhysicalTableScan::GetDataDuckDBParquet(ExecutionContext &exec_context, GPUCo
         SIRIUS_LOG_DEBUG("Column {} cached in GPU at index {}", up_column_name, column_idx);
     }
   }
-  SIRIUS_LOG_DEBUG("GetDataDuckDBParquet finished");
+  SIRIUS_LOG_DEBUG("GetDataDuckDBWithParquet finished");
   return SourceResultType::FINISHED;
 }
 

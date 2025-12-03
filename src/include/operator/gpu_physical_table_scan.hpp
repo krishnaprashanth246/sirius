@@ -137,7 +137,6 @@ public:
 												 GPUBufferManager* gpuBufferManager,
 												 string up_table_name);
 	SourceResultType GetDataDuckDBWithParquet(ExecutionContext &exec_context, GPUContext &gpu_context);
-	SourceResultType GetDataDuckDBParquet(ExecutionContext &exec_context, GPUContext &gpu_context);
 	SourceResultType GetDataDuckDB(ExecutionContext &exec_context);
 	void ScanDataDuckDB(GPUBufferManager* gpuBufferManager, string up_table_name) const;
 
