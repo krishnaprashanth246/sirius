@@ -1314,14 +1314,6 @@ GPUPhysicalTableScan::GetDataDuckDBParquet(ExecutionContext &exec_context, GPUCo
         int column_idx = column_it - gpuBufferManager->tables[up_table_name]->column_names.begin();
         gpuBufferManager->tables[up_table_name]->columns[column_idx]->column_length = gpu_cols[col]->column_length;
         gpuBufferManager->tables[up_table_name]->columns[column_idx]->data_wrapper = gpu_cols[col]->data_wrapper;
-        // GPUColumnType column_type = convertLogicalTypeToColumnType(scanned_types[col]);
-        // gpuBufferManager->tables[up_table_name]->columns[column_idx]->column_length = collection->Count();
-        // cudf::bitmask_type* validity_mask = reinterpret_cast<cudf::bitmask_type*>(d_mask_ptr[col]);
-        // if (scanned_types[col] == LogicalType::VARCHAR) {
-        //   gpuBufferManager->tables[up_table_name]->columns[column_idx]->data_wrapper = DataWrapper(column_type, d_ptr[col], d_offset_ptr[col], collection->Count(), column_size[col], true, validity_mask);
-        // } else {
-        //   gpuBufferManager->tables[up_table_name]->columns[column_idx]->data_wrapper = DataWrapper(column_type, d_ptr[col], collection->Count(), validity_mask);
-        // }
         SIRIUS_LOG_DEBUG("Column {} cached in GPU at index {}", up_column_name, column_idx);
     }
   }
