@@ -1232,7 +1232,7 @@ GPUPhysicalTableScan::GetDataDuckDBWithParquet(ExecutionContext &exec_context, G
   // check if query is parquet only
   SIRIUS_LOG_DEBUG("GPUPhysicalTableScan GetDataDuckDBWithParquet invoked");
   SIRIUS_LOG_DEBUG("GPU Active Query: \n{}", gpu_context.gpu_active_query->query);
-  if(!IsTableFunction() || !function.name == "read_parquet") {
+  if(!IsTableFunction() || !(function.name == "read_parquet")) {
     return GetDataDuckDB(exec_context);
   }
   SIRIUS_LOG_DEBUG("Detected table function read_parquet, invoking parquet reader");
