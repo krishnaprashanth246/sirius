@@ -1268,7 +1268,6 @@ GPUPhysicalTableScan::GetDataDuckDBParquet(ExecutionContext &exec_context, GPUCo
       projected_names.push_back(names[col_id.GetPrimaryIndex()]);
   }
   // Sort for consistent hashing across different query orders
-  sort(projected_names.begin(), projected_names.end());
   SIRIUS_LOG_DEBUG("Reading parquet file {} for table {}", parquet_file_path, table_name);
   auto gpu_cols = read_parquet_to_gpu_columns(parquet_file_path, projected_names, gpuBufferManager);
   int num_columns = gpu_cols.size();
