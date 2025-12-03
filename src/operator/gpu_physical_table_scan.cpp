@@ -1274,11 +1274,31 @@ GPUPhysicalTableScan::GetDataDuckDBParquet(ExecutionContext &exec_context, GPUCo
   SIRIUS_LOG_DEBUG("Parquet file {} read into {} GPU columns", parquet_file_path, num_columns);
   cache_parquet_columns(gpu_cols, gpuBufferManager);
   SIRIUS_LOG_DEBUG("Parquet columns cached into GPUBufferManager");
+  uint64_t total_size = 0;
   for (int col = 0; col < num_columns; col++) {
-      scanned_types[col] = convertColumnTypeToLogicalType(gpu_cols[col]->data_wrapper.type);
+    scanned_types[col] = convertColumnTypeToLogicalType(gpu_cols[col]->data_wrapper.type);
+    if (!already_cached[col]) {
+      total_size += gpu_cols[col]->data_wrapper.num_bytes;
+      total_size += gpu_cols[col]->data_wrapper.mask_bytes;
+    }
+  }
+  SIRIUS_LOG_DEBUG("Total size of uncached columns to be cached from parquet: {}", total_size);
+
+  if (gpuBufferManager->gpuCachingPointer[0] + gpuBufferManager->cpuCachingPointer[0] + total_size >= gpuBufferManager->cache_size_per_gpu) {
+    if (total_size > gpuBufferManager->cache_size_per_gpu) {
+      throw InvalidInputException("Total size of columns to be cached is greater than the cache size");
+    }
+    gpuBufferManager->ResetCache();
+    for (int col = 0; col < num_columns; col++) {
+      already_cached[col] = false;
+      gpuBufferManager->createTableAndColumnInGPU(table_name, projected_names[col], scanned_types[col], col, num_columns);
+    }
+  } else {
+    for (int col = 0; col < num_columns; col++) {
       if (!already_cached[col]) {
         gpuBufferManager->createTableAndColumnInGPU(table_name, projected_names[col], scanned_types[col], col, num_columns);
       }
+    }
   }
   SIRIUS_LOG_DEBUG("Created necessary table and columns in GPUBufferManager for parquet data");
   for (int col = 0; col < num_columns; col++) {
