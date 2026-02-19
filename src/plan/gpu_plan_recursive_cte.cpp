@@ -15,20 +15,19 @@
  */
 
 #include "duckdb/common/types/column/column_data_collection.hpp"
+#include "duckdb/execution/aggregate_hashtable.hpp"
 #include "duckdb/execution/operator/scan/physical_column_data_scan.hpp"
 #include "duckdb/execution/operator/set/physical_recursive_cte.hpp"
+#include "duckdb/execution/perfect_aggregate_hashtable.hpp"
 #include "duckdb/execution/physical_plan_generator.hpp"
+#include "duckdb/function/aggregate/distributive_function_utils.hpp"
+#include "duckdb/function/function_binder.hpp"
 #include "duckdb/planner/expression/bound_reference_expression.hpp"
 #include "duckdb/planner/operator/logical_cteref.hpp"
 #include "duckdb/planner/operator/logical_recursive_cte.hpp"
-#include "duckdb/function/aggregate/distributive_function_utils.hpp"
-#include "duckdb/function/function_binder.hpp"
-#include "duckdb/execution/aggregate_hashtable.hpp"
-#include "duckdb/execution/perfect_aggregate_hashtable.hpp"
-
+#include "gpu_physical_column_data_scan.hpp"
 #include "gpu_physical_cte.hpp"
 #include "gpu_physical_plan_generator.hpp"
-#include "gpu_physical_column_data_scan.hpp"
 
 namespace duckdb {
 
@@ -43,18 +42,17 @@ namespace duckdb {
 
 // 	auto left = CreatePlan(*op.children[0]);
 
-// 	// If the logical operator has no key targets or all columns are referenced, we create a normal recursive CTE
+// 	// If the logical operator has no key targets or all columns are referenced, we create a normal
+// recursive CTE
 // 	// operator
 // 	if (op.key_targets.empty()) {
 
 // 		auto right = CreatePlan(*op.children[1]);
 
-// 		auto cte = make_uniq<PhysicalRecursiveCTE>(op.ctename, op.table_index, op.types, op.union_all, std::move(left),
-// 		                                           std::move(right), op.estimated_cardinality);
-// 		cte->distinct_types = op.types;
-// 		cte->working_table = working_table;
-// 		return std::move(cte);
-// 	} else {
+// 		auto cte = make_uniq<PhysicalRecursiveCTE>(op.ctename, op.table_index, op.types, op.union_all,
+// std::move(left), 		                                           std::move(right),
+// op.estimated_cardinality); 		cte->distinct_types = op.types; 		cte->working_table =
+// working_table; 		return std::move(cte); 	} else {
 
 // 		vector<LogicalType> payload_types, distinct_types;
 // 		vector<idx_t> payload_idx, distinct_idx;
@@ -107,14 +105,11 @@ namespace duckdb {
 
 // 		auto right = CreatePlan(*op.children[1]);
 
-// 		auto cte = make_uniq<PhysicalRecursiveCTE>(op.ctename, op.table_index, op.types, op.union_all, std::move(left),
-// 		                                           std::move(right), op.estimated_cardinality);
-// 		cte->using_key = true;
-// 		cte->payload_aggregates = std::move(payload_aggregates);
-// 		cte->distinct_idx = distinct_idx;
-// 		cte->distinct_types = distinct_types;
-// 		cte->payload_idx = payload_idx;
-// 		cte->payload_types = payload_types;
+// 		auto cte = make_uniq<PhysicalRecursiveCTE>(op.ctename, op.table_index, op.types, op.union_all,
+// std::move(left), 		                                           std::move(right),
+// op.estimated_cardinality); 		cte->using_key = true; 		cte->payload_aggregates =
+// std::move(payload_aggregates); 		cte->distinct_idx = distinct_idx; 		cte->distinct_types =
+// distinct_types; 		cte->payload_idx = payload_idx; 		cte->payload_types = payload_types;
 // 		cte->ref_recurring = op.ref_recurring;
 // 		cte->working_table = working_table;
 // 		cte->recurring_table = recurring_table;
@@ -122,52 +117,63 @@ namespace duckdb {
 // 	}
 // }
 
-unique_ptr<GPUPhysicalOperator> GPUPhysicalPlanGenerator::CreatePlan(LogicalCTERef &op) {
-	D_ASSERT(op.children.empty());
+unique_ptr<GPUPhysicalOperator> GPUPhysicalPlanGenerator::CreatePlan(LogicalCTERef& op)
+{
+  D_ASSERT(op.children.empty());
 
-	// Check if this LogicalCTERef is supposed to scan a materialized CTE.
-	if (op.materialized_cte == CTEMaterialize::CTE_MATERIALIZE_ALWAYS) {
-		// Lookup if there is a materialized CTE for the cte_index.
-		auto materialized_cte = materialized_ctes.find(op.cte_index);
+  // Check if this LogicalCTERef is supposed to scan a materialized CTE.
+  // Lookup if there is a materialized CTE for the cte_index.
+  auto materialized_cte = materialized_ctes.find(op.cte_index);
 
-		// If this check fails, this is a reference to a materialized recursive CTE.
-		if (materialized_cte != materialized_ctes.end()) {
-			auto chunk_scan = make_uniq<GPUPhysicalColumnDataScan>(op.chunk_types, PhysicalOperatorType::CTE_SCAN,
-			                                                    op.estimated_cardinality, op.cte_index);
+  // If this check fails, this is a reference to a materialized recursive CTE.
+  if (materialized_cte != materialized_ctes.end()) {
+    auto chunk_scan = make_uniq<GPUPhysicalColumnDataScan>(
+      op.chunk_types, PhysicalOperatorType::CTE_SCAN, op.estimated_cardinality, op.cte_index);
 
-			auto cte = recursive_cte_tables.find(op.cte_index);
-			if (cte == recursive_cte_tables.end()) {
-				throw InvalidInputException("Referenced materialized CTE does not exist.");
-			}
-			chunk_scan->collection = cte->second.get();
-			// materialized_cte->second.push_back(*chunk_scan.get());
+    auto cte = recursive_cte_tables.find(op.cte_index);
+    if (cte == recursive_cte_tables.end()) {
+      throw InvalidInputException("Referenced materialized CTE does not exist.");
+    }
 
-			auto gpu_cte = gpu_recursive_cte_tables.find(op.cte_index);
-			if (gpu_cte == gpu_recursive_cte_tables.end()) {
-				throw InvalidInputException("Referenced materialized CTE does not exist.");
-			}
-			chunk_scan->intermediate_relation = gpu_cte->second;
+    chunk_scan->collection = cte->second.get();
+    // materialized_cte->second.push_back(*chunk_scan.get())
 
-			materialized_cte->second.push_back(*chunk_scan.get());
+    auto gpu_cte = gpu_recursive_cte_tables.find(op.cte_index);
+    if (gpu_cte == gpu_recursive_cte_tables.end()) {
+      throw InvalidInputException("Referenced materialized CTE does not exist.");
+    }
+    chunk_scan->intermediate_relation = gpu_cte->second;
 
-			return std::move(chunk_scan);
-		}
-	}
+    materialized_cte->second.push_back(*chunk_scan.get());
 
-    throw NotImplementedException("Recursive CTE is not implemented");
+    return std::move(chunk_scan);
+  }
 
-	// CreatePlan of a LogicalRecursiveCTE must have happened before.
-	auto cte = recursive_cte_tables.find(op.cte_index);
-	if (cte == recursive_cte_tables.end()) {
-		throw InvalidInputException("Referenced recursive CTE does not exist.");
-	}
+  throw NotImplementedException("Recursive CTE is not implemented");
 
-	auto chunk_scan = make_uniq<GPUPhysicalColumnDataScan>(
-	    cte->second.get()->Types(), PhysicalOperatorType::RECURSIVE_CTE_SCAN, op.estimated_cardinality, op.cte_index);
+  auto cte = recursive_cte_tables.find(op.cte_index);
+  if (cte == recursive_cte_tables.end()) {
+    throw InvalidInputException("Referenced recursive CTE does not exist.");
+  }
 
-	chunk_scan->collection = cte->second.get();
+  // If we found a recursive CTE and we want to scan the recurring table, we search for it,
+  if (op.is_recurring) {
+    cte = recurring_cte_tables.find(op.cte_index);
+    if (cte == recurring_cte_tables.end()) {
+      throw InvalidInputException("RECURRING can only be used with USING KEY in recursive CTE.");
+    }
+  }
 
-	return std::move(chunk_scan);
+  auto& types     = cte->second.get()->Types();
+  auto op_type    = op.is_recurring ? PhysicalOperatorType::RECURSIVE_RECURRING_CTE_SCAN
+                                    : PhysicalOperatorType::RECURSIVE_CTE_SCAN;
+  auto chunk_scan = make_uniq<GPUPhysicalColumnDataScan>(cte->second.get()->Types(),
+                                                         PhysicalOperatorType::RECURSIVE_CTE_SCAN,
+                                                         op.estimated_cardinality,
+                                                         op.cte_index);
+
+  chunk_scan->collection = cte->second.get();
+  return std::move(chunk_scan);
 }
 
-} // namespace duckdb
+}  // namespace duckdb

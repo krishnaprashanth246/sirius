@@ -11,9 +11,10 @@ test/__pycache__/
 tpch-data/dbgen
 .vscode/
 *.duckdb
-duckdb/*
+!test/cpp/integration/integration.duckdb
 CMakeFiles/
 CMakeCache.txt
+cmake_install.cmake
 dbgen/
 test_datasets/tpch-dbgen/
 test_datasets/tpch-mod-dbgen/
@@ -27,3 +28,4 @@ cufile.log
 # pixi environments
 .pixi/*
 !.pixi/config.toml
+compile_commands.json

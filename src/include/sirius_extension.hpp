@@ -20,22 +20,48 @@
 
 namespace duckdb {
 class GPUBufferManager;
+struct DBConfig;
 class SiriusExtension : public Extension {
-public:
-	void Load(DuckDB &db) override;
-	std::string Name() override;
-	void InitialGPUConfigs(DuckDB& db);
-	void InitializeGPUExtension(Connection &con);
-	static void GPUProcessingSubstraitFunction(ClientContext &context, TableFunctionInput &data_p, DataChunk &output);
-	static void GPUProcessingFunction(ClientContext &context, TableFunctionInput &data_p, DataChunk &output);
-	// static void GPUCachingFunction(ClientContext &context, TableFunctionInput &data_p, DataChunk &output);
-	static unique_ptr<FunctionData> GPUProcessingSubstraitBind(ClientContext &context, TableFunctionBindInput &input, vector<LogicalType> &return_types, vector<string> &names);
-	static unique_ptr<FunctionData> GPUProcessingBind(ClientContext &context, TableFunctionBindInput &input, vector<LogicalType> &return_types, vector<string> &names);
-	// static unique_ptr<FunctionData> GPUCachingBind(ClientContext &context, TableFunctionBindInput &input, vector<LogicalType> &return_types, vector<string> &names);
-	static void GPUBufferInitFunction(ClientContext &context, TableFunctionInput &data_p, DataChunk &output);
-	static unique_ptr<FunctionData> GPUBufferInitBind(ClientContext &context, TableFunctionBindInput &input, vector<LogicalType> &return_types, vector<string> &names);
+ public:
+  void Load(ExtensionLoader& loader) override;
+  std::string Name() override;
+  std::string Version() const override;
+  static void InitialGPUConfigs(DBConfig& db);
+  static void RegisterGPUFunctions(DatabaseInstance& catalog);
+  static void GPUProcessingSubstraitFunction(ClientContext& context,
+                                             TableFunctionInput& data_p,
+                                             DataChunk& output);
+  static void GPUProcessingFunction(ClientContext& context,
+                                    TableFunctionInput& data_p,
+                                    DataChunk& output);
+  static void GPUExecutionFunction(ClientContext& context,
+                                   TableFunctionInput& data_p,
+                                   DataChunk& output);
+  // static void GPUCachingFunction(ClientContext &context, TableFunctionInput &data_p, DataChunk
+  // &output);
+  static unique_ptr<FunctionData> GPUProcessingSubstraitBind(ClientContext& context,
+                                                             TableFunctionBindInput& input,
+                                                             vector<LogicalType>& return_types,
+                                                             vector<string>& names);
+  static unique_ptr<FunctionData> GPUProcessingBind(ClientContext& context,
+                                                    TableFunctionBindInput& input,
+                                                    vector<LogicalType>& return_types,
+                                                    vector<string>& names);
+  // static unique_ptr<FunctionData> GPUCachingBind(ClientContext &context, TableFunctionBindInput
+  // &input, vector<LogicalType> &return_types, vector<string> &names);
+  static void GPUBufferInitFunction(ClientContext& context,
+                                    TableFunctionInput& data_p,
+                                    DataChunk& output);
+  static unique_ptr<FunctionData> GPUBufferInitBind(ClientContext& context,
+                                                    TableFunctionBindInput& input,
+                                                    vector<LogicalType>& return_types,
+                                                    vector<string>& names);
+  static unique_ptr<FunctionData> GPUExecutionBind(ClientContext& context,
+                                                   TableFunctionBindInput& input,
+                                                   vector<LogicalType>& return_types,
+                                                   vector<string>& names);
 
-	static bool buffer_is_initialized;
+  static bool buffer_is_initialized;
 };
 
-} // namespace duckdb
+}  // namespace duckdb

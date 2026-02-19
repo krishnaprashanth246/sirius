@@ -17,7 +17,14 @@
 #pragma once
 
 #include "helper/helper.hpp"
-#include "memory/memory_reservation.hpp"
+
+#include <cudf/utilities/default_stream.hpp>
+
+#include <rmm/cuda_stream_view.hpp>
+
+#include <cucascade/memory/memory_reservation.hpp>
+
+#include <memory>
 
 namespace sirius {
 namespace parallel {
@@ -26,65 +33,93 @@ namespace parallel {
  * Interface for concrete task local states.
  */
 class itask_local_state {
-public:
+ public:
   virtual ~itask_local_state() = default;
 
-	template <class TargetType>
-	TargetType &cast() {
-		DynamicCastCheck<TargetType>(this);
-		return reinterpret_cast<TargetType &>(*this);
-	}
+  template <class TargetType>
+  TargetType& cast()
+  {
+    DynamicCastCheck<TargetType>(this);
+    return reinterpret_cast<TargetType&>(*this);
+  }
 
-	template <class TargetType>
-	const TargetType &cast() const {
-		DynamicCastCheck<TargetType>(this);
-		return reinterpret_cast<const TargetType &>(*this);
-	}
+  template <class TargetType>
+  const TargetType& cast() const
+  {
+    DynamicCastCheck<TargetType>(this);
+    return reinterpret_cast<const TargetType&>(*this);
+  }
 };
 
 /**
  * Interface for concrete task global states.
  */
 class itask_global_state {
-public:
+ public:
   virtual ~itask_global_state() = default;
 
   template <class TargetType>
-	TargetType &cast() {
-		DynamicCastCheck<TargetType>(this);
-		return reinterpret_cast<TargetType &>(*this);
-	}
+  TargetType& cast()
+  {
+    DynamicCastCheck<TargetType>(this);
+    return reinterpret_cast<TargetType&>(*this);
+  }
 
-	template <class TargetType>
-	const TargetType &cast() const {
-		DynamicCastCheck<TargetType>(this);
-		return reinterpret_cast<const TargetType &>(*this);
-	}
+  template <class TargetType>
+  const TargetType& cast() const
+  {
+    DynamicCastCheck<TargetType>(this);
+    return reinterpret_cast<const TargetType&>(*this);
+  }
 };
 
 /**
  * Interface for concrete executor tasks.
  */
 class itask {
-public:
-  itask(sirius::unique_ptr<itask_local_state> local_state, sirius::shared_ptr<itask_global_state> global_state)
-    : _local_state(std::move(local_state)), _global_state(global_state) {}
+ public:
+  itask(std::unique_ptr<itask_local_state> local_state,
+        std::shared_ptr<itask_global_state> global_state)
+    : _local_state(std::move(local_state)), _global_state(std::move(global_state))
+  {
+  }
 
   virtual ~itask() = default;
 
   // Non-copyable and movable.
-  itask(const itask&) = delete;
+  itask(const itask&)            = delete;
   itask& operator=(const itask&) = delete;
-  itask(itask&&) = default;
-  itask& operator=(itask&&) = default;
+  itask(itask&&)                 = default;
+  itask& operator=(itask&&)      = default;
 
   // Execution function.
-  virtual void execute() = 0;
+  virtual void execute(rmm::cuda_stream_view stream) = 0;
 
-protected:
-  sirius::unique_ptr<itask_local_state> _local_state;
-  sirius::shared_ptr<itask_global_state> _global_state;
+  template <typename T>
+  T* as() noexcept
+  {
+    return dynamic_cast<T*>(this);
+  }
+
+  template <typename T>
+  const T* as() const noexcept
+  {
+    return dynamic_cast<const T*>(this);
+  }
+
+  template <typename T>
+  [[nodiscard]] bool is() const noexcept
+  {
+    return dynamic_cast<const T*>(this) != nullptr;
+  }
+
+  itask_local_state* local_state() noexcept { return _local_state.get(); }
+  [[nodiscard]] itask_global_state* global_state() noexcept { return _global_state.get(); }
+
+ protected:
+  std::unique_ptr<itask_local_state> _local_state;
+  std::shared_ptr<itask_global_state> _global_state;
 };
 
-} // namespace parallel
-} // namespace sirius
+}  // namespace parallel
+}  // namespace sirius

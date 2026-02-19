@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-#include "expression_executor/gpu_expression_executor_state.hpp"
-#include "expression_executor/gpu_expression_executor.hpp"
+#include <cudf_utils.hpp>
+#include <expression_executor/gpu_expression_executor.hpp>
+#include <expression_executor/gpu_expression_executor_state.hpp>
 
-namespace duckdb
-{
-namespace sirius
-{
+namespace duckdb {
+namespace sirius {
 
 void GpuExpressionState::AddChild(const Expression& child_expr)
 {
@@ -33,12 +32,11 @@ void GpuExpressionState::AddChild(const Expression& child_expr)
 }
 
 GpuExpressionState::GpuExpressionState(const Expression& expr, GpuExpressionExecutorState& root)
-    : expr(expr)
-    , root(root)
-{}
+  : expr(expr), root(root)
+{
+}
 
-GpuExpressionExecutorState::GpuExpressionExecutorState()
-{}
+GpuExpressionExecutorState::GpuExpressionExecutorState() {}
 
-} // namespace sirius
-} // namespace duckdb
+}  // namespace sirius
+}  // namespace duckdb
